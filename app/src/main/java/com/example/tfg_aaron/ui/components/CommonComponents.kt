@@ -141,12 +141,20 @@ fun CoachBottomNavBar(navController: NavController) {
                     selected = selected,
                     modifier = Modifier.weight(1f)
                 ) {
-                    navController.navigate(item.route) {
-                        popUpTo(Screen.Dashboard.route) {
-                            saveState = true
+                    if (item.route == Screen.Dashboard.route) {
+                        navController.navigate(Screen.Dashboard.route) {
+                            popUpTo(Screen.Dashboard.route) { inclusive = false }
+                            launchSingleTop = true
                         }
-                        launchSingleTop = true
-                        restoreState = true
+                    } else {
+                        navController.navigate(item.route) {
+                            popUpTo(Screen.Dashboard.route) {
+                                saveState = true
+                                inclusive = false
+                            }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
                     }
                 }
             }
@@ -211,7 +219,10 @@ fun CoachBottomNavBar(navController: NavController) {
                             .clickable {
                                 showMoreSheet = false
                                 navController.navigate(item.route) {
-                                    popUpTo(Screen.Dashboard.route) { saveState = true }
+                                    popUpTo(Screen.Dashboard.route) {
+                                        saveState = true
+                                        inclusive = false
+                                    }
                                     launchSingleTop = true
                                     restoreState = true
                                 }
@@ -633,12 +644,20 @@ fun CoachNavigationRail(navController: NavController) {
             NavigationRailItem(
                 selected = selected,
                 onClick = {
-                    navController.navigate(item.route) {
-                        popUpTo(Screen.Dashboard.route) {
-                            saveState = true
+                    if (item.route == Screen.Dashboard.route) {
+                        navController.navigate(Screen.Dashboard.route) {
+                            popUpTo(Screen.Dashboard.route) { inclusive = false }
+                            launchSingleTop = true
                         }
-                        launchSingleTop = true
-                        restoreState = true
+                    } else {
+                        navController.navigate(item.route) {
+                            popUpTo(Screen.Dashboard.route) {
+                                saveState = true
+                                inclusive = false
+                            }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
                     }
                 },
                 icon = { Icon(item.icon, null, modifier = Modifier.size(20.dp)) },

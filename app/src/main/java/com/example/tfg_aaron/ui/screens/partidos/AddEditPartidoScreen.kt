@@ -63,6 +63,7 @@ fun AddEditPartidoScreen(
     var fecha by remember { mutableStateOf(System.currentTimeMillis()) }
     var showDatePicker by remember { mutableStateOf(false) }
     var initialized by remember { mutableStateOf(false) }
+    var isSaving by remember { mutableStateOf(false) }
 
     // Load existing partido if editing
     LaunchedEffect(partidoId, uiState.partidos) {
@@ -81,6 +82,10 @@ fun AddEditPartidoScreen(
         } else if (partidoId <= 0) {
             initialized = true
         }
+    }
+
+    LaunchedEffect(uiState.error) {
+        if (uiState.error != null) isSaving = false
     }
 
     LaunchedEffect(uiState.successMessage) {
@@ -410,18 +415,22 @@ fun AddEditPartidoScreen(
             // Save button
             Button(
                 onClick = {
-                    viewModel.savePartido(
-                        id = partidoId,
-                        rival = rival.trim(),
-                        lugar = lugar.trim(),
-                        jornada = jornada.toIntOrNull() ?: 0,
-                        esLocal = esLocal,
-                        notas = notas.trim(),
-                        puntosPropio = puntosPropio.toIntOrNull() ?: 0,
-                        puntosRival = puntosRival.toIntOrNull() ?: 0,
-                        fecha = fecha
-                    )
+                    if (!isSaving) {
+                        isSaving = true
+                        viewModel.savePartido(
+                            id = partidoId,
+                            rival = rival.trim(),
+                            lugar = lugar.trim(),
+                            jornada = jornada.toIntOrNull() ?: 0,
+                            esLocal = esLocal,
+                            notas = notas.trim(),
+                            puntosPropio = puntosPropio.toIntOrNull() ?: 0,
+                            puntosRival = puntosRival.toIntOrNull() ?: 0,
+                            fecha = fecha
+                        )
+                    }
                 },
+                enabled = !isSaving,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(54.dp),

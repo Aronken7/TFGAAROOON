@@ -120,7 +120,7 @@ private fun HeroBanner(stats: DashboardStats, navController: NavController) {
             .drawBehind {
                 drawRect(
                     brush = Brush.verticalGradient(
-                        listOf(Color(0xFF0D2137), NavyDark)
+                        listOf(NeonGreen.copy(alpha = 0.07f), NavyDark)
                     )
                 )
             }
@@ -381,7 +381,7 @@ private fun WinRateArc(progress: Float, winRate: Float, size: Dp) {
 
             // Background track
             drawArc(
-                color = Color(0xFF1A2D42),
+                color = NavyElevated,
                 startAngle = 135f,
                 sweepAngle = 270f,
                 useCenter = false,
@@ -467,7 +467,7 @@ private fun LiveActionBanner(onClick: () -> Unit) {
             .clip(RoundedCornerShape(16.dp))
             .background(
                 Brush.linearGradient(
-                    listOf(Color(0xFF0F3320), Color(0xFF0A2218))
+                    listOf(GreenSurface, NavyCard)
                 )
             )
             .border(
@@ -557,7 +557,6 @@ private fun QuickActionsSection(navController: NavController, isTablet: Boolean)
         Action(Icons.Filled.TrackChanges,        "OBJETIVOS",    TealAccent)  { navController.navigate(Screen.Objetivos.route) },
         Action(Icons.Filled.EmojiEvents,         "LIGA",         GoldAccent)  { navController.navigate(Screen.Clasificacion.route) },
         Action(Icons.Filled.CompareArrows,       "COMPARADOR",   ElectricBlue){ navController.navigate(Screen.Comparador.route) },
-        Action(Icons.Filled.BatteryChargingFull, "CARGA ACWR",   YellowWarning){ navController.navigate(Screen.Acwr.route) },
     )
 
     val cols = if (isTablet) 4 else 3
@@ -647,7 +646,7 @@ private fun ProximoPartidoCard(partido: PartidoEntity, diasHastaPartido: Int? = 
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
             .background(
-                Brush.linearGradient(listOf(Color(0xFF0D1F30), Color(0xFF0A1520)))
+                Brush.linearGradient(listOf(NavySurface, NavyCard))
             )
             .border(
                 width = 1.dp,

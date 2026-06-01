@@ -57,6 +57,7 @@ fun AddEditJugadoraScreen(navController: NavController, entrenadorId: Int, jugad
     var posicionExpanded by remember { mutableStateOf(false) }
     var rolExpanded by remember { mutableStateOf(false) }
     var fotoUri by remember { mutableStateOf("") }
+    var isSaving by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
     val photoPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
@@ -73,6 +74,10 @@ fun AddEditJugadoraScreen(navController: NavController, entrenadorId: Int, jugad
         if (isEdit) {
             viewModel.loadDetail(jugadoraId)
         }
+    }
+
+    LaunchedEffect(uiState.error) {
+        if (uiState.error != null) isSaving = false
     }
 
     LaunchedEffect(uiState.successMessage) {
@@ -360,38 +365,42 @@ fun AddEditJugadoraScreen(navController: NavController, entrenadorId: Int, jugad
 
                 Button(
                     onClick = {
-                        if (isEdit) {
-                            detail.jugadora?.let { j ->
-                                viewModel.updateJugadora(
-                                    j.copy(
-                                        nombre = nombre.trim(),
-                                        apellidos = apellidos.trim(),
-                                        numero = numero.toIntOrNull() ?: j.numero,
-                                        posicion = posicion,
-                                        rol = rol,
-                                        edad = edad.toIntOrNull() ?: 0,
-                                        altura = altura.toFloatOrNull() ?: 0f,
-                                        areasMejora = areasMejora.trim(),
-                                        notas = notas.trim(),
-                                        condicionFisica = condicionFisica,
-                                        fotoUri = fotoUri
+                        if (!isSaving) {
+                            isSaving = true
+                            if (isEdit) {
+                                detail.jugadora?.let { j ->
+                                    viewModel.updateJugadora(
+                                        j.copy(
+                                            nombre = nombre.trim(),
+                                            apellidos = apellidos.trim(),
+                                            numero = numero.toIntOrNull() ?: j.numero,
+                                            posicion = posicion,
+                                            rol = rol,
+                                            edad = edad.toIntOrNull() ?: 0,
+                                            altura = altura.toFloatOrNull() ?: 0f,
+                                            areasMejora = areasMejora.trim(),
+                                            notas = notas.trim(),
+                                            condicionFisica = condicionFisica,
+                                            fotoUri = fotoUri
+                                        )
                                     )
+                                }
+                            } else {
+                                viewModel.addJugadora(
+                                    nombre = nombre,
+                                    apellidos = apellidos,
+                                    numero = numero.toIntOrNull() ?: 0,
+                                    posicion = posicion,
+                                    rol = rol,
+                                    edad = edad.toIntOrNull() ?: 0,
+                                    altura = altura.toFloatOrNull() ?: 0f,
+                                    notas = notas,
+                                    fotoUri = fotoUri
                                 )
                             }
-                        } else {
-                            viewModel.addJugadora(
-                                nombre = nombre,
-                                apellidos = apellidos,
-                                numero = numero.toIntOrNull() ?: 0,
-                                posicion = posicion,
-                                rol = rol,
-                                edad = edad.toIntOrNull() ?: 0,
-                                altura = altura.toFloatOrNull() ?: 0f,
-                                notas = notas,
-                                fotoUri = fotoUri
-                            )
                         }
                     },
+                    enabled = !isSaving,
                     modifier = Modifier.fillMaxWidth().height(52.dp),
                     shape = RoundedCornerShape(14.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = GoldAccent)

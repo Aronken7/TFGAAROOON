@@ -26,7 +26,7 @@ class MainActivity : ComponentActivity() {
                 "LIGHT" -> false
                 else -> systemDark  // "SYSTEM"
             }
-            val isTablet = LocalConfiguration.current.smallestScreenWidthDp >= 600
+            val isTablet = false
             TFGAaronTheme(darkTheme = isDark) {
                 CompositionLocalProvider(LocalIsTablet provides isTablet) {
                     AppNavGraph(app)

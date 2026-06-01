@@ -100,10 +100,10 @@ fun RegisterScreen(navController: NavController) {
         Canvas(modifier = Modifier.fillMaxSize()) {
             val w = size.width; val h = size.height
 
-            // Gold orb top-left
+            // NeonGreen orb top-left
             drawCircle(
                 brush = Brush.radialGradient(
-                    listOf(GoldAccent.copy(alpha = glowPulse), Color.Transparent),
+                    listOf(NeonGreen.copy(alpha = glowPulse), Color.Transparent),
                     center = Offset(w * 0.2f + cos(orbOffset) * 30, h * 0.08f + sin(orbOffset) * 20),
                     radius = 160f
                 ),
@@ -122,10 +122,10 @@ fun RegisterScreen(navController: NavController) {
                 center = Offset(w * 0.9f, h * 0.35f + sin(orbOffset + 3f) * 25)
             )
 
-            // Orange orb bottom
+            // NeonGreen orb bottom
             drawCircle(
                 brush = Brush.radialGradient(
-                    listOf(OrangeBase.copy(alpha = glowPulse * 0.6f), Color.Transparent),
+                    listOf(NeonGreen.copy(alpha = glowPulse * 0.4f), Color.Transparent),
                     center = Offset(w * 0.5f + cos(orbOffset + 1.5f) * 40, h * 0.92f),
                     radius = 180f
                 ),
@@ -162,11 +162,11 @@ fun RegisterScreen(navController: NavController) {
                                     drawCircle(
                                         brush = Brush.sweepGradient(
                                             listOf(
-                                                TealAccent.copy(alpha = 0.6f),
-                                                GoldAccent.copy(alpha = 0.4f),
+                                                NeonGreen.copy(alpha = 0.8f),
+                                                TealAccent.copy(alpha = 0.4f),
                                                 Color.Transparent,
                                                 Color.Transparent,
-                                                TealAccent.copy(alpha = 0.5f)
+                                                NeonGreen.copy(alpha = 0.6f)
                                             )
                                         ),
                                         style = Stroke(width = 2.5.dp.toPx())
@@ -183,7 +183,11 @@ fun RegisterScreen(navController: NavController) {
                             .shadow(20.dp, CircleShape)
                             .clip(CircleShape)
                             .background(
-                                Brush.radialGradient(listOf(OrangeLight, OrangeBase, OrangeDark))
+                                Brush.radialGradient(listOf(
+                                    NeonGreen.copy(alpha = 0.9f),
+                                    Color(0xFF2E8800),
+                                    Color(0xFF1A5200)
+                                ))
                             )
                     ) {
                         Icon(Icons.Filled.PersonAdd, null, tint = Color.White, modifier = Modifier.size(28.dp))
@@ -200,7 +204,7 @@ fun RegisterScreen(navController: NavController) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Row {
                         Text("PlayVision", color = TextPrimary, fontWeight = FontWeight.ExtraBold, fontSize = 24.sp, letterSpacing = (-0.5).sp)
-                        Text(" AV", color = OrangeBase, fontWeight = FontWeight.ExtraBold, fontSize = 24.sp, letterSpacing = (-0.5).sp)
+                        Text(" AV", color = NeonGreen, fontWeight = FontWeight.ExtraBold, fontSize = 24.sp, letterSpacing = (-0.5).sp)
                     }
                     Spacer(Modifier.height(4.dp))
                     Text("Crear cuenta de entrenador", color = TextSecondary, fontSize = 13.sp, letterSpacing = 0.3.sp)
@@ -229,7 +233,7 @@ fun RegisterScreen(navController: NavController) {
                         )
                         Text(
                             "$completedFields/5",
-                            color = if (completedFields == 5) GreenSuccess else GoldAccent,
+                            color = NeonGreen,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.ExtraBold
                         )
@@ -246,7 +250,7 @@ fun RegisterScreen(navController: NavController) {
                             .fillMaxWidth()
                             .height(4.dp)
                             .clip(RoundedCornerShape(2.dp)),
-                        color = if (completedFields == 5) GreenSuccess else GoldAccent,
+                        color = NeonGreen,
                         trackColor = NavyElevated
                     )
                 }
@@ -278,9 +282,9 @@ fun RegisterScreen(navController: NavController) {
                             1.dp,
                             Brush.linearGradient(
                                 listOf(
-                                    GoldAccent.copy(alpha = 0.15f),
+                                    NeonGreen.copy(alpha = 0.25f),
                                     Color.White.copy(alpha = 0.05f),
-                                    GoldAccent.copy(alpha = 0.08f)
+                                    NeonGreen.copy(alpha = 0.10f)
                                 )
                             )
                         )
@@ -293,7 +297,7 @@ fun RegisterScreen(navController: NavController) {
                                         .size(6.dp, 16.dp)
                                         .clip(RoundedCornerShape(3.dp))
                                         .background(
-                                            Brush.verticalGradient(listOf(GoldAccent, OrangeBase))
+                                            Brush.verticalGradient(listOf(NeonGreen, TealAccent))
                                         )
                                 )
                                 Spacer(Modifier.width(10.dp))
@@ -301,7 +305,7 @@ fun RegisterScreen(navController: NavController) {
                                     "DATOS DEL ENTRENADOR",
                                     fontSize = 10.sp,
                                     fontWeight = FontWeight.ExtraBold,
-                                    color = GoldAccent,
+                                    color = NeonGreen,
                                     letterSpacing = 2.sp
                                 )
                             }
@@ -410,7 +414,7 @@ fun RegisterScreen(navController: NavController) {
                     TextButton(onClick = { navController.popBackStack() }) {
                         Text(
                             "Iniciar sesión",
-                            color = OrangeBase,
+                            color = NeonGreen,
                             fontWeight = FontWeight.Bold,
                             fontSize = 13.sp
                         )

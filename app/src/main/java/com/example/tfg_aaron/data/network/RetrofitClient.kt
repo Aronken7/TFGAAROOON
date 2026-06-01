@@ -1,5 +1,6 @@
 package com.example.tfg_aaron.data.network
 
+import android.os.Build
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -7,8 +8,24 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 object RetrofitClient {
 
-    // 10.0.2.2 es como el emulador Android accede al localhost del PC
-    private const val BASE_URL = "http://10.0.2.2:8081/"
+    private val BASE_URL: String
+        get() {
+            val isEmulator = Build.FINGERPRINT.startsWith("generic") ||
+                Build.FINGERPRINT.startsWith("unknown") ||
+                Build.FINGERPRINT.contains("emulator") ||
+                Build.FINGERPRINT.contains("sdk_gphone") ||
+                Build.MODEL.contains("google_sdk") ||
+                Build.MODEL.contains("Emulator") ||
+                Build.MODEL.contains("Android SDK built for x86") ||
+                Build.MODEL.startsWith("sdk_gphone") ||
+                Build.HARDWARE.contains("goldfish") ||
+                Build.HARDWARE.contains("ranchu") ||
+                Build.PRODUCT.startsWith("sdk_gphone") ||
+                Build.PRODUCT.contains("emulator") ||
+                Build.BRAND.startsWith("generic") ||
+                Build.DEVICE.startsWith("generic")
+            return if (isEmulator) "http://10.0.2.2:8081/" else "http://localhost:8081/"
+        }
 
     private var token: String? = null
 

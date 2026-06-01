@@ -2,8 +2,6 @@ package com.example.tfg_aaron.ui.navigation
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -58,8 +56,6 @@ import com.example.tfg_aaron.ui.screens.alineacion.AlineacionScreen
 import com.example.tfg_aaron.ui.screens.clasificacion.ClasificacionScreen
 import com.example.tfg_aaron.ui.screens.busqueda.BusquedaScreen
 import com.example.tfg_aaron.ui.screens.comparador.ComparadorScreen
-import com.example.tfg_aaron.ui.screens.acwr.AcwrScreen
-
 import com.example.tfg_aaron.ui.theme.NavyDark
 import com.example.tfg_aaron.ui.theme.OrangeBase
 
@@ -116,25 +112,22 @@ private fun PlayVisionNavHost(
     NavHost(
         navController = navController,
         startDestination = startDestination,
+        modifier = Modifier.fillMaxSize().background(NavyDark),
         enterTransition = {
-            slideInHorizontally(tween(320, easing = FastOutSlowInEasing)) { it / 4 } +
-            scaleIn(tween(320, easing = FastOutSlowInEasing), initialScale = 0.92f) +
-            fadeIn(tween(320))
+            slideInHorizontally(tween(260, easing = FastOutSlowInEasing)) { it / 3 } +
+            fadeIn(tween(260))
         },
         exitTransition = {
-            slideOutHorizontally(tween(320, easing = FastOutSlowInEasing)) { -it / 4 } +
-            scaleOut(tween(320, easing = FastOutSlowInEasing), targetScale = 0.92f) +
-            fadeOut(tween(200))
+            slideOutHorizontally(tween(220, easing = FastOutSlowInEasing)) { -it / 3 } +
+            fadeOut(tween(180))
         },
         popEnterTransition = {
-            slideInHorizontally(tween(320, easing = FastOutSlowInEasing)) { -it / 4 } +
-            scaleIn(tween(320, easing = FastOutSlowInEasing), initialScale = 0.95f) +
-            fadeIn(tween(320))
+            slideInHorizontally(tween(260, easing = FastOutSlowInEasing)) { -it / 3 } +
+            fadeIn(tween(260))
         },
         popExitTransition = {
-            slideOutHorizontally(tween(320, easing = FastOutSlowInEasing)) { it / 4 } +
-            scaleOut(tween(320, easing = FastOutSlowInEasing), targetScale = 0.95f) +
-            fadeOut(tween(200))
+            slideOutHorizontally(tween(220, easing = FastOutSlowInEasing)) { it / 3 } +
+            fadeOut(tween(180))
         }
     ) {
         // Auth
@@ -302,9 +295,6 @@ private fun PlayVisionNavHost(
 
         // Comparador de jugadoras
         composable(Screen.Comparador.route) { ComparadorScreen(navController, id) }
-
-        // ACWR - Carga de trabajo
-        composable(Screen.Acwr.route) { AcwrScreen(navController, id) }
 
     }
 }

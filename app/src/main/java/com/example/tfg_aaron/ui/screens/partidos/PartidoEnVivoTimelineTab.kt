@@ -177,15 +177,6 @@ private fun TimelineEventCard(item: TimelineItem) {
                         fontWeight = if (isImportant) FontWeight.Bold else FontWeight.Normal,
                         maxLines = 2
                     )
-                    // Time stamp
-                    val mins = (item.timestamp / 60).toInt()
-                    val secs = (item.timestamp % 60).toInt()
-                    if (item.timestamp > 0) {
-                        Text(
-                            "%d:%02d".format(mins, secs),
-                            color = TextTertiary, fontSize = 9.sp
-                        )
-                    }
                 }
 
                 if (item.isRival) {

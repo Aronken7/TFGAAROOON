@@ -102,10 +102,10 @@ fun LoginScreen(navController: NavController) {
         Canvas(modifier = Modifier.fillMaxSize()) {
             val w = size.width; val h = size.height
 
-            // Gold orb top-right
+            // NeonGreen orb top-right
             drawCircle(
                 brush = Brush.radialGradient(
-                    listOf(GoldAccent.copy(alpha = glowPulse), Color.Transparent),
+                    listOf(NeonGreen.copy(alpha = glowPulse), Color.Transparent),
                     center = Offset(w * 0.8f + cos(orbOffset) * 40, h * 0.12f + sin(orbOffset) * 30),
                     radius = 180f
                 ),
@@ -113,10 +113,10 @@ fun LoginScreen(navController: NavController) {
                 center = Offset(w * 0.8f + cos(orbOffset) * 40, h * 0.12f + sin(orbOffset) * 30)
             )
 
-            // Orange orb bottom-left
+            // NeonGreen orb bottom-left
             drawCircle(
                 brush = Brush.radialGradient(
-                    listOf(OrangeBase.copy(alpha = glowPulse * 0.7f), Color.Transparent),
+                    listOf(NeonGreen.copy(alpha = glowPulse * 0.5f), Color.Transparent),
                     center = Offset(w * 0.15f + cos(orbOffset + 2f) * 30, h * 0.85f + sin(orbOffset + 2f) * 25),
                     radius = 200f
                 ),
@@ -137,7 +137,7 @@ fun LoginScreen(navController: NavController) {
 
             // Subtle court lines
             drawArc(
-                color = GoldAccent.copy(alpha = 0.04f),
+                color = NeonGreen.copy(alpha = 0.04f),
                 startAngle = 0f, sweepAngle = 180f, useCenter = false,
                 topLeft = Offset(w * 0.1f, -h * 0.1f),
                 size = Size(w * 0.8f, h * 0.35f),
@@ -180,11 +180,11 @@ fun LoginScreen(navController: NavController) {
                                     drawCircle(
                                         brush = Brush.sweepGradient(
                                             listOf(
-                                                GoldAccent.copy(alpha = 0.8f),
-                                                OrangeBase.copy(alpha = 0.4f),
+                                                NeonGreen.copy(alpha = 0.9f),
+                                                TealAccent.copy(alpha = 0.4f),
                                                 Color.Transparent,
                                                 Color.Transparent,
-                                                GoldAccent.copy(alpha = 0.6f)
+                                                NeonGreen.copy(alpha = 0.7f)
                                             )
                                         ),
                                         style = Stroke(width = 3.dp.toPx())
@@ -201,8 +201,8 @@ fun LoginScreen(navController: NavController) {
                             .background(
                                 Brush.radialGradient(
                                     listOf(
-                                        GoldAccent.copy(alpha = 0.12f),
-                                        OrangeBase.copy(alpha = 0.04f),
+                                        NeonGreen.copy(alpha = 0.10f),
+                                        TealAccent.copy(alpha = 0.04f),
                                         Color.Transparent
                                     )
                                 )
@@ -216,13 +216,13 @@ fun LoginScreen(navController: NavController) {
                             .clip(CircleShape)
                             .background(
                                 Brush.radialGradient(
-                                    listOf(OrangeBase.copy(alpha = 0.18f), OrangeBase.copy(alpha = 0.05f))
+                                    listOf(NeonGreen.copy(alpha = 0.15f), NeonGreen.copy(alpha = 0.04f))
                                 )
                             )
                             .border(
                                 1.dp,
                                 Brush.linearGradient(
-                                    listOf(GoldAccent.copy(alpha = 0.3f), OrangeBase.copy(alpha = 0.15f))
+                                    listOf(NeonGreen.copy(alpha = 0.4f), TealAccent.copy(alpha = 0.15f))
                                 ),
                                 CircleShape
                             )
@@ -237,7 +237,11 @@ fun LoginScreen(navController: NavController) {
                             .clip(CircleShape)
                             .background(
                                 Brush.radialGradient(
-                                    colors = listOf(OrangeLight, OrangeBase, OrangeDark)
+                                    colors = listOf(
+                                        NeonGreen.copy(alpha = 0.9f),
+                                        Color(0xFF2E8800),
+                                        Color(0xFF1A5200)
+                                    )
                                 )
                             )
                     ) {
@@ -271,7 +275,7 @@ fun LoginScreen(navController: NavController) {
                             text = " AV",
                             fontSize = 34.sp,
                             fontWeight = FontWeight.ExtraBold,
-                            color = OrangeBase,
+                            color = NeonGreen,
                             letterSpacing = (-1).sp
                         )
                     }
@@ -301,7 +305,7 @@ fun LoginScreen(navController: NavController) {
                             .offset(y = 6.dp)
                             .blur(28.dp)
                             .clip(RoundedCornerShape(28.dp))
-                            .background(GoldAccent.copy(alpha = 0.04f))
+                            .background(NeonGreen.copy(alpha = 0.04f))
                     )
 
                     Card(
@@ -312,9 +316,9 @@ fun LoginScreen(navController: NavController) {
                             1.dp,
                             Brush.linearGradient(
                                 listOf(
-                                    GoldAccent.copy(alpha = 0.2f),
+                                    NeonGreen.copy(alpha = 0.25f),
                                     Color.White.copy(alpha = 0.06f),
-                                    GoldAccent.copy(alpha = 0.08f)
+                                    NeonGreen.copy(alpha = 0.10f)
                                 )
                             )
                         )
@@ -327,7 +331,7 @@ fun LoginScreen(navController: NavController) {
                                         .size(6.dp, 16.dp)
                                         .clip(RoundedCornerShape(3.dp))
                                         .background(
-                                            Brush.verticalGradient(listOf(GoldAccent, OrangeBase))
+                                            Brush.verticalGradient(listOf(NeonGreen, TealAccent))
                                         )
                                 )
                                 Spacer(Modifier.width(10.dp))
@@ -335,7 +339,7 @@ fun LoginScreen(navController: NavController) {
                                     text = "INICIAR SESIÓN",
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.ExtraBold,
-                                    color = GoldAccent,
+                                    color = NeonGreen,
                                     letterSpacing = 2.5.sp
                                 )
                             }
@@ -457,7 +461,7 @@ fun LoginScreen(navController: NavController) {
                     border = BorderStroke(
                         1.dp,
                         Brush.linearGradient(
-                            listOf(NavyBorder, GoldAccent.copy(alpha = 0.2f), NavyBorder)
+                            listOf(NavyBorder, NeonGreen.copy(alpha = 0.2f), NavyBorder)
                         )
                     ),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = TextSecondary)
@@ -498,10 +502,10 @@ internal fun PremiumTextField(
                 modifier = Modifier
                     .size(32.dp)
                     .clip(RoundedCornerShape(8.dp))
-                    .background(GoldAccent.copy(alpha = 0.08f)),
+                    .background(NeonGreen.copy(alpha = 0.10f)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(icon, null, tint = GoldAccent, modifier = Modifier.size(16.dp))
+                Icon(icon, null, tint = NeonGreen, modifier = Modifier.size(16.dp))
             }
         },
         trailingIcon = if (isPassword) {
@@ -523,13 +527,13 @@ internal fun PremiumTextField(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = GoldAccent,
+            focusedBorderColor = NeonGreen,
             unfocusedBorderColor = NavyBorder,
-            focusedLabelColor = GoldAccent,
+            focusedLabelColor = NeonGreen,
             unfocusedLabelColor = TextTertiary,
             focusedTextColor = TextPrimary,
             unfocusedTextColor = TextPrimary,
-            cursorColor = GoldAccent,
+            cursorColor = NeonGreen,
             focusedContainerColor = NavyElevated.copy(alpha = 0.6f),
             unfocusedContainerColor = NavySurface.copy(alpha = 0.5f)
         ),
@@ -546,7 +550,7 @@ internal fun PremiumActionButton(
     isLoading: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    gradientColors: List<Color> = listOf(GoldDark, GoldAccent, GoldDark)
+    gradientColors: List<Color> = listOf(Color(0xFF1A5200), NeonGreen, Color(0xFF1A5200))
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "btn")
     val shimmerOffset by infiniteTransition.animateFloat(
@@ -564,7 +568,7 @@ internal fun PremiumActionButton(
                     .offset(y = 4.dp)
                     .blur(16.dp)
                     .clip(RoundedCornerShape(16.dp))
-                    .background(GoldAccent.copy(alpha = 0.15f))
+                    .background(NeonGreen.copy(alpha = 0.18f))
             )
         }
 

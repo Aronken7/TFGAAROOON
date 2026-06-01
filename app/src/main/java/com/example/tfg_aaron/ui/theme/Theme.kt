@@ -45,14 +45,14 @@ private val DarkColorScheme = darkColorScheme(
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = Color(0xFF3A6400),         // Dark green — legible sobre blanco
+    primary = Color(0xFF3AAA00),         // Vivid green — acento principal
     onPrimary = Color.White,
-    primaryContainer = Color(0xFFCEFF83),
-    onPrimaryContainer = Color(0xFF0C1F00),
-    secondary = OrangeBase,
+    primaryContainer = Color(0xFFCCFF85),
+    onPrimaryContainer = Color(0xFF0A2000),
+    secondary = Color(0xFF2E8800),
     onSecondary = Color.White,
-    secondaryContainer = Color(0xFFFFDBC8),
-    onSecondaryContainer = Color(0xFF3A0D00),
+    secondaryContainer = Color(0xFFDDFFB0),
+    onSecondaryContainer = Color(0xFF062000),
     tertiary = Color(0xFF0055CC),
     onTertiary = Color.White,
     tertiaryContainer = Color(0xFFD6E4FF),
@@ -61,18 +61,18 @@ private val LightColorScheme = lightColorScheme(
     onError = Color.White,
     errorContainer = Color(0xFFFFDAD6),
     onErrorContainer = Color(0xFF410002),
-    background = Color(0xFFF5F7FF),      // Fondo blanco con tinte navy
-    onBackground = NavyDark,
+    background = Color(0xFFFFFFFF),      // Fondo blanco puro
+    onBackground = Color(0xFF0B1326),
     surface = Color(0xFFFFFFFF),         // Tarjetas blancas
-    onSurface = NavyDark,
-    surfaceVariant = Color(0xFFE0E6F0),  // Gris-azulado claro
-    onSurfaceVariant = Color(0xFF3A4560),
-    outline = Color(0xFF8A9AB5),
-    outlineVariant = Color(0xFFCFD8E8),
-    inverseSurface = NavyDark,
-    inverseOnSurface = TextPrimary,
-    inversePrimary = NeonGreen,
-    surfaceTint = Color(0xFF3A6400),
+    onSurface = Color(0xFF0B1326),
+    surfaceVariant = Color(0xFFF4F6FA),
+    onSurfaceVariant = Color(0xFF3D4F6E),
+    outline = Color(0xFFADB8CC),
+    outlineVariant = Color(0xFFDDE3EE),
+    inverseSurface = Color(0xFF0B1326),
+    inverseOnSurface = Color(0xFFF5F5F0),
+    inversePrimary = Color(0xFFADFF2F),
+    surfaceTint = Color(0xFF3AAA00),
     scrim = Color(0x80000000)
 )
 
@@ -89,7 +89,7 @@ fun TFGAaronTheme(
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
-            val bgColor = if (darkTheme) Color(0xFF0B1326).toArgb() else Color(0xFFF0F2FA).toArgb()
+            val bgColor = if (darkTheme) Color(0xFF0B1326).toArgb() else Color(0xFFFFFFFF).toArgb()
             window.statusBarColor = bgColor
             window.navigationBarColor = Color.Transparent.toArgb()
             WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme

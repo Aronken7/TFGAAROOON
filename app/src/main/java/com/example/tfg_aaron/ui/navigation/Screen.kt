@@ -82,6 +82,4 @@ sealed class Screen(val route: String) {
     object Busqueda : Screen("busqueda")
     // Comparador de jugadoras
     object Comparador : Screen("comparador")
-    // ACWR - Carga de trabajo
-    object Acwr : Screen("acwr")
 }

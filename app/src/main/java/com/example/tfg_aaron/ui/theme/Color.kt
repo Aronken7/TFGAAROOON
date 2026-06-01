@@ -40,16 +40,16 @@ private val _D_PinkAccent    = Color(0xFFFF2D78)
 private val _D_CyanNeon      = Color(0xFF00D4FF)
 
 // ── Light palette (private) ───────────────────────────────────────────────────
-private val _L_NavyDark      = Color(0xFFF0F2FA)   // main bg: light blue-white
-private val _L_NavySurface   = Color(0xFFE6EAF5)   // elevated surface
+private val _L_NavyDark      = Color(0xFFFFFFFF)   // main bg: pure white
+private val _L_NavySurface   = Color(0xFFF4F6FA)   // elevated surface
 private val _L_NavyCard      = Color(0xFFFFFFFF)   // card: pure white
-private val _L_NavyElevated  = Color(0xFFEDF1FA)   // dialogs/sheets
-private val _L_NavyBorder    = Color(0xFFCAD3E8)   // borders
+private val _L_NavyElevated  = Color(0xFFEFF2F8)   // dialogs/sheets
+private val _L_NavyBorder    = Color(0xFFDDE3EE)   // borders
 private val _L_TextPrimary   = Color(0xFF0B1326)   // near-black navy
 private val _L_TextSecondary = Color(0xFF3D4F6E)   // medium navy
 private val _L_TextTertiary  = Color(0xFF6B7A99)   // muted slate
-private val _L_NeonGreen     = Color(0xFF2E7200)   // dark green — readable on white
-private val _L_NeonGreenDim  = Color(0xFF3D8A00)
+private val _L_NeonGreen     = Color(0xFF3AAA00)   // vivid green — readable on white
+private val _L_NeonGreenDim  = Color(0xFF2E8800)
 private val _L_OrangeBase    = Color(0xFFCC4400)   // slightly darker for contrast
 private val _L_OrangeLight   = Color(0xFFE85520)
 private val _L_OrangeDark    = Color(0xFF992E00)

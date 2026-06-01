@@ -676,7 +676,7 @@ private fun RivalStatsContent(state: PartidoEnVivoUiState, onAddRival: () -> Uni
 
     // SHARED scroll state for rival stats
     val sharedScrollState = rememberScrollState()
-    val rivalHeaders = listOf("FP", "FT", "FA", "TOT", "REB", "AST", "ROB", "PER", "TAP")
+    val rivalHeaders = listOf("PTS", "FP", "FT", "FA", "TOT", "REB", "AST", "ROB", "PER", "TAP")
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -700,6 +700,7 @@ private fun RivalStatsContent(state: PartidoEnVivoUiState, onAddRival: () -> Uni
                         fontWeight = FontWeight.ExtraBold, modifier = Modifier.width(100.dp))
                     rivalHeaders.forEach { h ->
                         val color = when (h) {
+                            "PTS" -> GoldAccent
                             "TOT" -> RedError
                             "REB" -> TealAccent
                             "AST" -> GoldAccent
@@ -757,6 +758,7 @@ private fun RivalStatsContent(state: PartidoEnVivoUiState, onAddRival: () -> Uni
                         }
                     }
 
+                    StatCell("${st.puntos}", GoldAccent)
                     StatCell(
                         "${st.faltasPersonales}",
                         if (st.faltasPersonales >= 4) RedError else if (st.faltasPersonales >= 3) YellowWarning else TextSecondary

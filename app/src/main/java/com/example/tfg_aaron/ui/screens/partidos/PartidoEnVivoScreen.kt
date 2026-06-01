@@ -416,6 +416,7 @@ fun PartidoEnVivoScreen(
                     ) {
                         // ── Left: Our foul dots + BON + timeout button ──
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+
                             Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp)) {
                                 Row(horizontalArrangement = Arrangement.spacedBy(3.dp)) {
                                     (1..5).forEach { i ->
@@ -452,10 +453,32 @@ fun PartidoEnVivoScreen(
                                     }
                                 }
                             }
+                            // Bench technical — our bench
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(PinkAccent.copy(0.08f))
+                                    .border(1.dp, PinkAccent.copy(0.35f), RoundedCornerShape(8.dp))
+                                    .clickable { vm.registrarTecnicaBanquillo(true) }
+                                    .padding(horizontal = 7.dp, vertical = 5.dp)
+                            ) {
+                                Text("T.BNQ", color = PinkAccent, fontSize = 8.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 0.3.sp)
+                            }
                         }
 
                         // ── Right: Rival timeout button + BON + foul dots ──
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            // Bench technical — rival bench
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(PinkAccent.copy(0.08f))
+                                    .border(1.dp, PinkAccent.copy(0.35f), RoundedCornerShape(8.dp))
+                                    .clickable { vm.registrarTecnicaBanquillo(false) }
+                                    .padding(horizontal = 7.dp, vertical = 5.dp)
+                            ) {
+                                Text("T.BNQ", color = PinkAccent, fontSize = 8.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 0.3.sp)
+                            }
                             // Timeout button rival
                             Box(
                                 modifier = Modifier
@@ -532,9 +555,13 @@ fun PartidoEnVivoScreen(
 
             // Overlays
             s.tirosLibresPendientes?.let { pending ->
-                val nombre = if (pending.isRivalFT) "RIVAL"
-                else s.jugadoras.find { it.id == pending.idTirador }
-                    ?.let { "${it.nombre} ${it.apellidos}" } ?: "Tiro Libre"
+                val nombre = if (pending.isRivalFT) {
+                    if (pending.idTirador > 0) s.rivalPlayers.find { it.id == pending.idTirador }?.displayName ?: "RIVAL"
+                    else "RIVAL"
+                } else {
+                    s.jugadoras.find { it.id == pending.idTirador }
+                        ?.let { "${it.nombre} ${it.apellidos}" } ?: "Tiro Libre"
+                }
                 TirosLibresDialog(
                     nombre = nombre, tiroActual = pending.tirosLanzados + 1,
                     totalTiros = pending.totalTiros, isRivalFT = pending.isRivalFT,
@@ -546,6 +573,10 @@ fun PartidoEnVivoScreen(
                     canastaPuntua = config.canastaPuntua, onCanastaPuntuaChange = { vm.updateFaltaTiroCanasta(it) },
                     esTresEnTiro = config.esTresEnTiro, onEsTresEnTiroChange = { vm.updateFaltaTiroEsTres(it) },
                     isRivalFoulant = config.isRivalFoulant,
+                    idShooter = config.idShooter,
+                    jugadorasEnCancha = s.jugadoras.filter { it.id in s.enCancha },
+                    rivalPlayers = s.rivalPlayers.filter { it.id in s.rivalEnCancha },
+                    onShooterChange = { vm.updateFaltaTiroShooter(it) },
                     onConfirm = { vm.confirmarFaltaTiro() }, onDismiss = { vm.cancelarFaltaTiro() }
                 )
             }
@@ -569,7 +600,7 @@ fun PartidoEnVivoScreen(
                     TaponRecibidorDialog(
                         isRivalBlock = config.isRivalBlock,
                         propioEnCancha = s.jugadoras.filter { it.id in s.enCancha },
-                        rivalPlayers = s.rivalPlayers.take(5),
+                        rivalPlayers = s.rivalPlayers.filter { it.id in s.rivalEnCancha },
                         onSeleccionarRecibidor = { vm.seleccionarRecibidorTapon(it) },
                         onSkipLocation = { vm.saltarLocationTapon() },
                         onDismiss = { vm.cancelarTapon() }
@@ -579,7 +610,7 @@ fun PartidoEnVivoScreen(
             s.bloqueReboteConfig?.let { config ->
                 BloqueReboteDialog(
                     propioEnCancha = s.jugadoras.filter { it.id in s.enCancha },
-                    rivalEnCancha = s.rivalPlayers.take(5),
+                    rivalEnCancha = s.rivalPlayers.filter { it.id in s.rivalEnCancha },
                     isRivalBlock = config.isRivalBlock,
                     onConfirm = { id, esPropio -> vm.confirmarReboteTrasBloqueo(id, esPropio) },
                     onDismiss = { vm.cancelarReboteBloqueo() }
@@ -597,7 +628,7 @@ fun PartidoEnVivoScreen(
                         tipoPerdida = config.tipoPerdida,
                         isRival = config.isRival,
                         jugadoras = s.jugadoras.filter { it.id in s.enCancha },
-                        rivalPlayers = s.rivalPlayers.take(5),
+                        rivalPlayers = s.rivalPlayers.filter { it.id in s.rivalEnCancha },
                         onConfirm = { vm.confirmarRecuperadorPerdida(it) },
                         onSinRecuperacion = { vm.confirmarRecuperadorPerdida(null) },
                         onDismiss = { vm.cancelarPerdida() }
@@ -616,6 +647,34 @@ fun PartidoEnVivoScreen(
                 AddRivalDialog(
                     onConfirm = { nombre, numero -> vm.agregarRival(nombre, numero) },
                     onDismiss = { vm.dismissAddRival() }
+                )
+            }
+            if (s.showEditRival) {
+                s.editingRival?.let { rival ->
+                    EditarRivalDialog(
+                        rival = rival,
+                        onConfirm = { nombre, numero -> vm.editarRival(rival.id, nombre, numero) },
+                        onDismiss = { vm.cerrarEditarRival() }
+                    )
+                }
+            }
+            if (s.tecnicaBanqPickerShow) {
+                TecnicaBanqPickerDialog(
+                    esPropio = s.tecnicaBanqEsPropio,
+                    propioEnCancha = s.jugadoras.filter { it.id in s.enCancha },
+                    rivalEnCancha = s.rivalPlayers.filter { it.id in s.rivalEnCancha },
+                    onConfirm = { vm.confirmarTecnicaBanqShooter(it) },
+                    onDismiss = { vm.cerrarTecnicaBanqPicker() }
+                )
+            }
+            if (s.showRivalSustitucion) {
+                RivalSustitucionDialog(
+                    rivalEnCancha = s.rivalPlayers.filter { it.id in s.rivalEnCancha },
+                    rivalBanquillo = s.rivalPlayers.filter { it.id !in s.rivalEnCancha },
+                    saleId = s.rivalSustSaleId,
+                    entraId = s.rivalSustEntraId,
+                    onConfirm = { vm.confirmarSustitucionRival(it) },
+                    onDismiss = { vm.cerrarSustitucionRival() }
                 )
             }
             // ── Mandatory expulsion substitution dialog (non-dismissible) ──
@@ -721,7 +780,12 @@ fun PartidoEnVivoScreen(
                 onDismiss = { vm.cerrarRivalAcciones() },
                 onEvento = { tipo -> vm.registrarEventoRival(tipo, rival.id); haptic.performHapticFeedback(HapticFeedbackType.LongPress) },
                 onPuntos = { pts -> vm.registrarPuntoRivalIndividual(pts, rival.id); haptic.performHapticFeedback(HapticFeedbackType.LongPress) },
-                onFaltaTiroRival = { vm.iniciarFaltaTiroRival(rival.id) }
+                onFaltaTiroRival = { vm.iniciarFaltaTiroRival(rival.id) },
+                onEditar = { vm.abrirEditarRival(rival) },
+                onSustituir = {
+                    if (rival.id in s.rivalEnCancha) vm.abrirSustitucionRivalDesdeCancha(rival.id)
+                    else vm.abrirSustitucionRivalDesdeBanquillo(rival.id)
+                }
             )
         }
     }
@@ -1004,7 +1068,8 @@ private fun JuegoContent(state: PartidoEnVivoUiState, vm: PartidoEnVivoViewModel
             Box(modifier = Modifier.width(1.dp).fillMaxHeight().background(NavyBorder))
 
             // ── Right column: Rivals ──
-            val banquilloRival = state.rivalPlayers.drop(5)
+            val rivalEnCanchaList = state.rivalPlayers.filter { it.id in state.rivalEnCancha }
+            val banquilloRival = state.rivalPlayers.filter { it.id !in state.rivalEnCancha }
             Column(
                 modifier = Modifier
                     .weight(1f)
@@ -1041,14 +1106,14 @@ private fun JuegoContent(state: PartidoEnVivoUiState, vm: PartidoEnVivoViewModel
                     ) { Text("Toca + para registrar jugadoras rivales", color = TextTertiary, fontSize = 12.sp) }
                 } else {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        state.rivalPlayers.take(5).forEach { rival ->
+                        rivalEnCanchaList.forEach { rival ->
                             val st = state.rivalStats[rival.id] ?: EstadisticasRival()
-                            val maxRivPuntos = state.rivalPlayers.maxOfOrNull { state.rivalStats[it.id]?.puntos ?: 0 } ?: 0
+                            val maxRivPuntos = rivalEnCanchaList.maxOfOrNull { state.rivalStats[it.id]?.puntos ?: 0 } ?: 0
                             val isTopRival = maxRivPuntos > 0 && st.puntos == maxRivPuntos
                             RivalCardGrid(rival = rival, stats = st, isTopScorer = isTopRival,
                                 onClick = { vm.seleccionarRival(rival) }, modifier = Modifier.weight(1f))
                         }
-                        if (state.rivalPlayers.size < 5) repeat(5 - state.rivalPlayers.size) { Spacer(Modifier.weight(1f)) }
+                        if (rivalEnCanchaList.size < 5) repeat(5 - rivalEnCanchaList.size) { Spacer(Modifier.weight(1f)) }
                     }
                 }
                 // Banquillo rival
@@ -1242,13 +1307,14 @@ private fun JuegoContent(state: PartidoEnVivoUiState, vm: PartidoEnVivoViewModel
                     contentAlignment = Alignment.Center
                 ) { Text("Toca + para registrar jugadoras rivales", color = TextTertiary, fontSize = 12.sp) }
             } else {
+                val rivalEnCanchaPortrait = state.rivalPlayers.filter { it.id in state.rivalEnCancha }
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp),
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    state.rivalPlayers.take(5).forEach { rival ->
+                    rivalEnCanchaPortrait.forEach { rival ->
                         val st = state.rivalStats[rival.id] ?: EstadisticasRival()
-                        val maxRivPuntos = state.rivalPlayers.maxOfOrNull { state.rivalStats[it.id]?.puntos ?: 0 } ?: 0
+                        val maxRivPuntos = rivalEnCanchaPortrait.maxOfOrNull { state.rivalStats[it.id]?.puntos ?: 0 } ?: 0
                         val isTopRival = maxRivPuntos > 0 && st.puntos == maxRivPuntos
                         RivalCardGrid(
                             rival = rival, stats = st,
@@ -1257,14 +1323,14 @@ private fun JuegoContent(state: PartidoEnVivoUiState, vm: PartidoEnVivoViewModel
                             modifier = Modifier.weight(1f)
                         )
                     }
-                    if (state.rivalPlayers.size < 5) {
-                        repeat(5 - state.rivalPlayers.size) { Spacer(Modifier.weight(1f)) }
+                    if (rivalEnCanchaPortrait.size < 5) {
+                        repeat(5 - rivalEnCanchaPortrait.size) { Spacer(Modifier.weight(1f)) }
                     }
                 }
             }
 
             // ── BANQUILLO RIVAL (collapsible) ──
-            val banquilloRival = state.rivalPlayers.drop(5)
+            val banquilloRival = state.rivalPlayers.filter { it.id !in state.rivalEnCancha }
             if (banquilloRival.isNotEmpty()) {
                 Row(
                     modifier = Modifier
@@ -1892,7 +1958,8 @@ private fun AccionesBottomSheet(
 private fun RivalAccionesBottomSheet(
     rival: RivalPlayerState, stats: EstadisticasRival,
     onDismiss: () -> Unit, onEvento: (String) -> Unit,
-    onPuntos: (Int) -> Unit, onFaltaTiroRival: () -> Unit
+    onPuntos: (Int) -> Unit, onFaltaTiroRival: () -> Unit,
+    onEditar: () -> Unit = {}, onSustituir: () -> Unit = {}
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     ModalBottomSheet(
@@ -1949,6 +2016,33 @@ private fun RivalAccionesBottomSheet(
                 ActionBtn("Robo", GreenSuccess, Modifier.weight(1f)) { onEvento(EventoTipo.RIVAL_ROBO) }
                 ActionBtn("Pérdida", RedError.copy(0.7f), Modifier.weight(1f)) { onEvento(EventoTipo.RIVAL_PERDIDA) }
                 ActionBtn("Tapón", PurpleAccent, Modifier.weight(1f)) { onEvento(EventoTipo.RIVAL_TAPON) }
+            }
+            Spacer(Modifier.height(8.dp))
+            HorizontalDivider(color = NavyBorder)
+            Spacer(Modifier.height(8.dp))
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(
+                    onClick = onSustituir,
+                    modifier = Modifier.weight(1f).height(44.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(1.dp, TealAccent.copy(0.4f)),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = TealAccent)
+                ) {
+                    Icon(Icons.Filled.SwapHoriz, null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text("Sustituir", fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                }
+                OutlinedButton(
+                    onClick = onEditar,
+                    modifier = Modifier.weight(1f).height(44.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(1.dp, TextSecondary.copy(0.3f)),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = TextSecondary)
+                ) {
+                    Icon(Icons.Filled.Edit, null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text("Editar", fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                }
             }
         }
     }
@@ -2015,6 +2109,251 @@ private fun AddRivalDialog(onConfirm: (String, String) -> Unit, onDismiss: () ->
 }
 
 @Composable
+private fun EditarRivalDialog(rival: RivalPlayerState, onConfirm: (String, String) -> Unit, onDismiss: () -> Unit) {
+    var nombre by remember { mutableStateOf(rival.nombre) }
+    var numero by remember { mutableStateOf(rival.numero) }
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFF120608)),
+            border = BorderStroke(1.5.dp, RedError.copy(0.4f))
+        ) {
+            Column(modifier = Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Box(
+                        modifier = Modifier.size(36.dp).clip(RoundedCornerShape(10.dp))
+                            .background(RedError.copy(0.15f))
+                            .border(1.dp, RedError.copy(0.4f), RoundedCornerShape(10.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Filled.Edit, null, tint = RedError, modifier = Modifier.size(18.dp))
+                    }
+                    Text("EDITAR RIVAL", color = RedError, fontWeight = FontWeight.ExtraBold, fontSize = 11.sp, letterSpacing = 2.sp)
+                }
+                OutlinedTextField(
+                    value = nombre, onValueChange = { nombre = it },
+                    label = { Text("Nombre de la jugadora") }, modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = RedError, unfocusedBorderColor = NavyBorder,
+                        focusedLabelColor = RedError, unfocusedLabelColor = TextTertiary,
+                        focusedTextColor = TextPrimary, unfocusedTextColor = TextPrimary,
+                        cursorColor = RedError, focusedContainerColor = NavyElevated, unfocusedContainerColor = NavySurface
+                    ), singleLine = true
+                )
+                OutlinedTextField(
+                    value = numero, onValueChange = { numero = it },
+                    label = { Text("Dorsal") }, modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = RedError, unfocusedBorderColor = NavyBorder,
+                        focusedLabelColor = RedError, unfocusedLabelColor = TextTertiary,
+                        focusedTextColor = TextPrimary, unfocusedTextColor = TextPrimary,
+                        cursorColor = RedError, focusedContainerColor = NavyElevated, unfocusedContainerColor = NavySurface
+                    ), singleLine = true
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(onClick = onDismiss, modifier = Modifier.weight(1f),
+                        border = BorderStroke(1.dp, NavyBorder), shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = TextSecondary)) { Text("Cancelar") }
+                    Button(onClick = { if (nombre.isNotBlank()) onConfirm(nombre, numero) },
+                        modifier = Modifier.weight(1f), enabled = nombre.isNotBlank(),
+                        colors = ButtonDefaults.buttonColors(containerColor = RedError), shape = RoundedCornerShape(12.dp)
+                    ) { Text("Guardar", fontWeight = FontWeight.Bold) }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TecnicaBanqPickerDialog(
+    esPropio: Boolean,
+    propioEnCancha: List<JugadoraEntity>,
+    rivalEnCancha: List<RivalPlayerState>,
+    onConfirm: (Int) -> Unit,
+    onDismiss: () -> Unit
+) {
+    // esPropio = our bench tech → rival shoots (pick from rivalEnCancha)
+    // !esPropio = rival bench tech → we shoot (pick from propioEnCancha)
+    val titulo = if (esPropio) "¿Qué rival lanza el libre?" else "¿Quién lanza el libre?"
+    val subtitulo = if (esPropio) "Técnica a nuestro banquillo — el rival tira"
+                    else "Técnica al banquillo rival — nosotros tiramos"
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(containerColor = NavyCard),
+            border = BorderStroke(1.dp, PinkAccent.copy(0.4f))
+        ) {
+            Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Box(
+                        modifier = Modifier.size(36.dp).clip(RoundedCornerShape(10.dp))
+                            .background(PinkAccent.copy(0.15f))
+                            .border(1.dp, PinkAccent.copy(0.4f), RoundedCornerShape(10.dp)),
+                        contentAlignment = Alignment.Center
+                    ) { Text("T", color = PinkAccent, fontWeight = FontWeight.Black, fontSize = 16.sp) }
+                    Column {
+                        Text("T. BANQUILLO", color = PinkAccent, fontWeight = FontWeight.ExtraBold, fontSize = 10.sp, letterSpacing = 2.sp)
+                        Text(titulo, color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                    }
+                }
+                Text(subtitulo, color = TextSecondary, fontSize = 12.sp)
+                HorizontalDivider(color = NavyBorder)
+                if (esPropio) {
+                    // Pick rival shooter
+                    if (rivalEnCancha.isEmpty()) {
+                        Box(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp))
+                            .background(NavyElevated).padding(14.dp), contentAlignment = Alignment.Center) {
+                            Text("Sin rivales en cancha", color = TextTertiary, fontSize = 12.sp)
+                        }
+                    } else {
+                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            rivalEnCancha.forEach { rival ->
+                                Row(
+                                    modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp))
+                                        .background(RedError.copy(0.08f)).border(1.dp, RedError.copy(0.2f), RoundedCornerShape(10.dp))
+                                        .clickable { onConfirm(rival.id) }.padding(horizontal = 14.dp, vertical = 10.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    Box(modifier = Modifier.size(34.dp).clip(RoundedCornerShape(8.dp))
+                                        .background(RedError.copy(0.12f)).border(1.dp, RedError.copy(0.2f), RoundedCornerShape(8.dp)),
+                                        contentAlignment = Alignment.Center) {
+                                        Text(if (rival.numero.isNotEmpty()) "#${rival.numero}" else "${rival.id}",
+                                            color = RedError, fontWeight = FontWeight.ExtraBold, fontSize = 12.sp)
+                                    }
+                                    Text(rival.nombre, color = TextPrimary, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    // Pick own player shooter
+                    if (propioEnCancha.isEmpty()) {
+                        Box(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp))
+                            .background(NavyElevated).padding(14.dp), contentAlignment = Alignment.Center) {
+                            Text("Sin jugadoras en cancha", color = TextTertiary, fontSize = 12.sp)
+                        }
+                    } else {
+                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            propioEnCancha.forEach { j ->
+                                Row(
+                                    modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp))
+                                        .background(NeonGreen.copy(0.08f)).border(1.dp, NeonGreen.copy(0.2f), RoundedCornerShape(10.dp))
+                                        .clickable { onConfirm(j.id) }.padding(horizontal = 14.dp, vertical = 10.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    Box(modifier = Modifier.size(34.dp).clip(RoundedCornerShape(8.dp))
+                                        .background(NeonGreen.copy(0.12f)).border(1.dp, NeonGreen.copy(0.25f), RoundedCornerShape(8.dp)),
+                                        contentAlignment = Alignment.Center) {
+                                        Text("#${j.numero}", color = NeonGreen, fontWeight = FontWeight.ExtraBold, fontSize = 12.sp)
+                                    }
+                                    Text("${j.nombre} ${j.apellidos}", color = TextPrimary, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                                }
+                            }
+                        }
+                    }
+                }
+                OutlinedButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth(),
+                    border = BorderStroke(1.dp, NavyBorder), shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = TextSecondary)) { Text("Cancelar") }
+            }
+        }
+    }
+}
+
+@Composable
+private fun RivalSustitucionDialog(
+    rivalEnCancha: List<RivalPlayerState>,
+    rivalBanquillo: List<RivalPlayerState>,
+    saleId: Int?,
+    entraId: Int?,
+    onConfirm: (Int) -> Unit,
+    onDismiss: () -> Unit
+) {
+    // saleId set → user picked who leaves, now pick who enters
+    // entraId set → user picked who enters, now pick who leaves
+    val (titulo, listaOpciones, instruccion) = when {
+        saleId != null -> Triple(
+            "¿Quién entra?",
+            rivalBanquillo,
+            "Selecciona la rival que entra al campo"
+        )
+        else -> Triple(
+            "¿Quién sale?",
+            rivalEnCancha,
+            "Selecciona la rival que sale al banquillo"
+        )
+    }
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(containerColor = NavyCard),
+            border = BorderStroke(1.dp, TealAccent.copy(0.4f))
+        ) {
+            Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Box(
+                        modifier = Modifier.size(36.dp).clip(RoundedCornerShape(10.dp))
+                            .background(TealAccent.copy(0.15f))
+                            .border(1.dp, TealAccent.copy(0.4f), RoundedCornerShape(10.dp)),
+                        contentAlignment = Alignment.Center
+                    ) { Icon(Icons.Filled.SwapHoriz, null, tint = TealAccent, modifier = Modifier.size(18.dp)) }
+                    Column {
+                        Text("CAMBIO RIVAL", color = TealAccent, fontWeight = FontWeight.ExtraBold, fontSize = 11.sp, letterSpacing = 2.sp)
+                        Text(titulo, color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    }
+                }
+                Text(instruccion, color = TextSecondary, fontSize = 12.sp)
+                if (listaOpciones.isEmpty()) {
+                    Box(
+                        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp))
+                            .background(NavyElevated).padding(16.dp),
+                        contentAlignment = Alignment.Center
+                    ) { Text("No hay rivales disponibles", color = TextTertiary, fontSize = 12.sp) }
+                } else {
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        listaOpciones.forEach { rival ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .background(RedError.copy(0.08f))
+                                    .border(1.dp, RedError.copy(0.2f), RoundedCornerShape(10.dp))
+                                    .clickable { onConfirm(rival.id) }
+                                    .padding(horizontal = 14.dp, vertical = 10.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier.size(36.dp).clip(RoundedCornerShape(8.dp))
+                                        .background(RedError.copy(0.12f))
+                                        .border(1.dp, RedError.copy(0.2f), RoundedCornerShape(8.dp)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        if (rival.numero.isNotEmpty()) "#${rival.numero}" else "${rival.id}",
+                                        color = RedError, fontWeight = FontWeight.ExtraBold, fontSize = 13.sp
+                                    )
+                                }
+                                Text(rival.nombre, color = TextPrimary, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                            }
+                        }
+                    }
+                }
+                OutlinedButton(
+                    onClick = onDismiss, modifier = Modifier.fillMaxWidth(),
+                    border = BorderStroke(1.dp, NavyBorder), shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = TextSecondary)
+                ) { Text("Cancelar") }
+            }
+        }
+    }
+}
+
+@Composable
 private fun TirosLibresDialog(
     nombre: String, tiroActual: Int, totalTiros: Int,
     isRivalFT: Boolean = false, onAnotado: () -> Unit, onFallado: () -> Unit
@@ -2026,7 +2365,6 @@ private fun TirosLibresDialog(
             border = BorderStroke(1.5.dp, if (isRivalFT) RedError.copy(0.5f) else OrangeBase.copy(0.5f))
         ) {
             Column(modifier = Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                // Header with icon
                 Box(
                     modifier = Modifier.size(52.dp).clip(CircleShape)
                         .background(if (isRivalFT) RedError.copy(0.15f) else OrangeBase.copy(0.15f))
@@ -2054,18 +2392,18 @@ private fun TirosLibresDialog(
                 Text("Tiro $tiroActual de $totalTiros", color = TextSecondary, fontSize = 14.sp)
                 HorizontalDivider(color = NavyBorder)
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Button(onClick = onFallado, modifier = Modifier.weight(1f).height(52.dp),
-                        shape = RoundedCornerShape(14.dp), colors = ButtonDefaults.buttonColors(containerColor = RedError)) {
+                    Button(onClick = onFallado, modifier = Modifier.weight(1f).height(64.dp),
+                        shape = RoundedCornerShape(14.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFB71C1C))) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("✗", fontSize = 18.sp, fontWeight = FontWeight.ExtraBold)
-                            Text("Fallado", fontSize = 11.sp)
+                            Text("✗", fontSize = 22.sp, fontWeight = FontWeight.ExtraBold)
+                            Text("FALLA", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                         }
                     }
-                    Button(onClick = onAnotado, modifier = Modifier.weight(1f).height(52.dp),
-                        shape = RoundedCornerShape(14.dp), colors = ButtonDefaults.buttonColors(containerColor = GreenSuccess)) {
+                    Button(onClick = onAnotado, modifier = Modifier.weight(1f).height(64.dp),
+                        shape = RoundedCornerShape(14.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1B5E20))) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("✓", fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, color = NavyDark)
-                            Text("Anotado", fontSize = 11.sp, color = NavyDark)
+                            Text("✓", fontSize = 22.sp, fontWeight = FontWeight.ExtraBold)
+                            Text("METE", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
@@ -2079,6 +2417,10 @@ private fun FaltaTiroConfigDialog(
     canastaPuntua: Boolean, onCanastaPuntuaChange: (Boolean) -> Unit,
     esTresEnTiro: Boolean, onEsTresEnTiroChange: (Boolean) -> Unit,
     isRivalFoulant: Boolean = false,
+    idShooter: Int = 0,
+    jugadorasEnCancha: List<JugadoraEntity> = emptyList(),
+    rivalPlayers: List<RivalPlayerState> = emptyList(),
+    onShooterChange: (Int) -> Unit = {},
     onConfirm: () -> Unit, onDismiss: () -> Unit
 ) {
     val accentColor = if (isRivalFoulant) NeonGreen else RedError
@@ -2113,6 +2455,52 @@ private fun FaltaTiroConfigDialog(
                         }
                     }
                 }
+
+                // Shooter selection
+                val shooterLabel = if (isRivalFoulant) "¿Quién tiraba? (tu jugadora)" else "¿Qué rival tiraba?"
+                Text(shooterLabel, color = TextSecondary, fontSize = 13.sp)
+                if (isRivalFoulant) {
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        items(jugadorasEnCancha) { j ->
+                            val isSelected = j.id == idShooter
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .background(if (isSelected) accentColor.copy(0.15f) else NavyElevated)
+                                    .border(1.dp, if (isSelected) accentColor else NavyBorder, RoundedCornerShape(10.dp))
+                                    .clickable { onShooterChange(j.id) }
+                                    .padding(horizontal = 10.dp, vertical = 8.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Text("#${j.numero}", color = if (isSelected) accentColor else TextSecondary, fontWeight = FontWeight.ExtraBold, fontSize = 12.sp)
+                                    Text(j.nombre.take(6), color = if (isSelected) TextPrimary else TextTertiary, fontSize = 9.sp)
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        items(rivalPlayers) { rival ->
+                            val isSelected = rival.id == idShooter
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .background(if (isSelected) accentColor.copy(0.15f) else NavyElevated)
+                                    .border(1.dp, if (isSelected) accentColor else NavyBorder, RoundedCornerShape(10.dp))
+                                    .clickable { onShooterChange(rival.id) }
+                                    .padding(horizontal = 10.dp, vertical = 8.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Text(if (rival.numero.isNotEmpty()) "#${rival.numero}" else "#${rival.id}", color = if (isSelected) accentColor else TextSecondary, fontWeight = FontWeight.ExtraBold, fontSize = 12.sp)
+                                    Text(rival.nombre.take(6), color = if (isSelected) TextPrimary else TextTertiary, fontSize = 9.sp)
+                                }
+                            }
+                        }
+                    }
+                }
+                Spacer(Modifier.height(4.dp))
 
                 // Toggle: ¿Entró la canasta?
                 Text("¿Entró la canasta?", color = TextSecondary, fontSize = 13.sp)

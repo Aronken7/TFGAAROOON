@@ -50,6 +50,12 @@ object EventoTipo {
     // Rival individual player scoring (idJugadora = -rivalId, valor = 2 or 3)
     const val RIVAL_PUNTO_2 = "RIVAL_PUNTO_2"
     const val RIVAL_PUNTO_3 = "RIVAL_PUNTO_3"
+    // Rival substitutions (idJugadora = -rivalId, valor = rivalId)
+    const val RIVAL_SUSTITUCION_ENTRA = "RIVAL_SUSTITUCION_ENTRA"
+    const val RIVAL_SUSTITUCION_SALE = "RIVAL_SUSTITUCION_SALE"
+    // Rival individual free throws
+    const val RIVAL_LIBRE_ANOTADO = "RIVAL_LIBRE_ANOTADO"
+    const val RIVAL_LIBRE_FALLADO = "RIVAL_LIBRE_FALLADO"
 }
 
 @Entity(

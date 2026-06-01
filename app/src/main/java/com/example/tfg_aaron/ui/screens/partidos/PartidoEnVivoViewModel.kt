@@ -48,6 +48,8 @@ data class EstadisticasJugadora(
 
 data class EstadisticasRival(
     val puntos: Int = 0,
+    val tirosLibres: Int = 0,
+    val tirosLibresAnotados: Int = 0,
     val rebotesOfensivos: Int = 0,
     val rebotesDefensivos: Int = 0,
     val asistencias: Int = 0,
@@ -60,6 +62,7 @@ data class EstadisticasRival(
 ) {
     val rebotesTotales get() = rebotesOfensivos + rebotesDefensivos
     val faltasTotales get() = faltasPersonales + faltasTecnicas + faltasAntideportivas
+    val pctTL get() = if (tirosLibres == 0) 0f else tirosLibresAnotados * 100f / tirosLibres
     val expulsada get() = faltasPersonales >= 5 || (faltasTecnicas + faltasAntideportivas) >= 2
 }
 
@@ -106,7 +109,8 @@ data class FaltaTiroConfigState(
     val numTiros: Int = 2,
     val canastaPuntua: Boolean = false,
     val esTresEnTiro: Boolean = false,
-    val isRivalFoulant: Boolean = false  // true = rival fouls on our shooter
+    val isRivalFoulant: Boolean = false,  // true = rival fouls on our shooter
+    val idShooter: Int = 0
 )
 
 data class AsistenciaConfigState(
@@ -173,10 +177,18 @@ data class PartidoEnVivoUiState(
     val taponConfig: TaponConfig? = null,
     // Rival players
     val rivalPlayers: List<RivalPlayerState> = emptyList(),
+    val rivalEnCancha: List<Int> = emptyList(),
     val rivalStats: Map<Int, EstadisticasRival> = emptyMap(),
     val showAddRival: Boolean = false,
     val rivalSeleccionado: RivalPlayerState? = null,
     val showRivalAcciones: Boolean = false,
+    val showEditRival: Boolean = false,
+    val editingRival: RivalPlayerState? = null,
+    val showRivalSustitucion: Boolean = false,
+    val rivalSustSaleId: Int? = null,
+    val rivalSustEntraId: Int? = null,
+    val tecnicaBanqPickerShow: Boolean = false,
+    val tecnicaBanqEsPropio: Boolean = false,
     // Computed analytics
     val parciales: List<ParcialCuarto> = emptyList(),
     val shootingPropio: ShootingStatsEquipo = ShootingStatsEquipo(),
@@ -296,6 +308,7 @@ class PartidoEnVivoViewModel(
             repository.getEventosByPartido(partidoId).collect { eventos ->
                 val jugadoras = _state.value.jugadoras
                 val rivalPlayers = computeRivalPlayers(eventos)
+                val rivalEnCancha = computeRivalEnCancha(eventos)
                 val enCancha = computeEnCancha(eventos)
                 val stats = computeStats(eventos)
                 val rivalStats = computeRivalStats(eventos)
@@ -341,6 +354,7 @@ class PartidoEnVivoViewModel(
                     cuartoActual = cuarto,
                     fase = fase,
                     rivalPlayers = rivalPlayers,
+                    rivalEnCancha = rivalEnCancha,
                     rivalStats = rivalStats,
                     parciales = parciales,
                     shootingPropio = shooting,
@@ -393,6 +407,7 @@ class PartidoEnVivoViewModel(
                 EventoTipo.PUNTO_RIVAL -> rival += e.valor
                 EventoTipo.RIVAL_PUNTO_2 -> rival += 2
                 EventoTipo.RIVAL_PUNTO_3 -> rival += 3
+                EventoTipo.RIVAL_LIBRE_ANOTADO -> rival += 1
             }
         }
         return propio to rival
@@ -420,21 +435,42 @@ class PartidoEnVivoViewModel(
                 EventoTipo.ROBO -> s.copy(robos = s.robos + 1)
                 EventoTipo.PERDIDA -> s.copy(perdidas = s.perdidas + 1)
                 EventoTipo.TAPON -> s.copy(tapones = s.tapones + 1)
+                EventoTipo.TIRO_DOS_FALLADO -> s.copy(tirosDos = s.tirosDos + 1)
+                EventoTipo.TIRO_TRES_FALLADO -> s.copy(tirosTres = s.tirosTres + 1)
                 else -> s
             }
         }
         return map
     }
 
-    private fun computeRivalPlayers(eventos: List<EventoPartidoEntity>): List<RivalPlayerState> =
-        eventos.filter { it.tipoEvento == EventoTipo.RIVAL_JUGADORA_ALTA }.map { e ->
-            val parts = e.texto.split("|")
-            RivalPlayerState(
-                id = e.valor,
-                nombre = parts.getOrElse(0) { "Rival" },
-                numero = parts.getOrElse(1) { "" }
-            )
+    private fun computeRivalPlayers(eventos: List<EventoPartidoEntity>): List<RivalPlayerState> {
+        val latestByRivalId = mutableMapOf<Int, EventoPartidoEntity>()
+        for (e in eventos.filter { it.tipoEvento == EventoTipo.RIVAL_JUGADORA_ALTA }) {
+            latestByRivalId[e.valor] = e
         }
+        return latestByRivalId.values.sortedBy { it.valor }.map { e ->
+            val parts = e.texto.split("|")
+            RivalPlayerState(id = e.valor, nombre = parts.getOrElse(0) { "Rival" }, numero = parts.getOrElse(1) { "" })
+        }
+    }
+
+    private fun computeRivalEnCancha(eventos: List<EventoPartidoEntity>): List<Int> {
+        val seenIds = mutableSetOf<Int>()
+        val inPlay = mutableSetOf<Int>()
+        for (e in eventos) {
+            when (e.tipoEvento) {
+                EventoTipo.RIVAL_JUGADORA_ALTA -> {
+                    if (e.valor !in seenIds) {
+                        seenIds.add(e.valor)
+                        if (inPlay.size < 5) inPlay.add(e.valor)  // first 5 added go to court
+                    }
+                }
+                EventoTipo.RIVAL_SUSTITUCION_SALE -> inPlay.remove(e.valor)
+                EventoTipo.RIVAL_SUSTITUCION_ENTRA -> inPlay.add(e.valor)
+            }
+        }
+        return inPlay.toList()
+    }
 
     private fun computeRivalStats(eventos: List<EventoPartidoEntity>): Map<Int, EstadisticasRival> {
         val map = mutableMapOf<Int, EstadisticasRival>()
@@ -444,7 +480,8 @@ class PartidoEnVivoViewModel(
             if (rivalId == 0) continue
             val s = map.getOrDefault(rivalId, EstadisticasRival())
             map[rivalId] = when (e.tipoEvento) {
-                EventoTipo.RIVAL_FALTA_PERSONAL -> s.copy(faltasPersonales = s.faltasPersonales + 1)
+                EventoTipo.RIVAL_FALTA_PERSONAL,
+                EventoTipo.RIVAL_FALTA_PERSONAL_TIRO -> s.copy(faltasPersonales = s.faltasPersonales + 1)
                 EventoTipo.RIVAL_FALTA_TECNICA -> s.copy(faltasTecnicas = s.faltasTecnicas + 1)
                 EventoTipo.RIVAL_FALTA_ANTIDEPORTIVA -> s.copy(faltasAntideportivas = s.faltasAntideportivas + 1)
                 EventoTipo.RIVAL_REBOTE_OF -> s.copy(rebotesOfensivos = s.rebotesOfensivos + 1)
@@ -455,6 +492,12 @@ class PartidoEnVivoViewModel(
                 EventoTipo.RIVAL_TAPON -> s.copy(tapones = s.tapones + 1)
                 EventoTipo.RIVAL_PUNTO_2 -> s.copy(puntos = s.puntos + 2)
                 EventoTipo.RIVAL_PUNTO_3 -> s.copy(puntos = s.puntos + 3)
+                EventoTipo.RIVAL_LIBRE_ANOTADO -> s.copy(
+                    puntos = s.puntos + 1,
+                    tirosLibres = s.tirosLibres + 1,
+                    tirosLibresAnotados = s.tirosLibresAnotados + 1
+                )
+                EventoTipo.RIVAL_LIBRE_FALLADO -> s.copy(tirosLibres = s.tirosLibres + 1)
                 else -> s
             }
         }
@@ -470,6 +513,9 @@ class PartidoEnVivoViewModel(
                     EventoTipo.PUNTO_3 -> propio += 3
                     EventoTipo.LIBRE_ANOTADO -> propio += 1
                     EventoTipo.PUNTO_RIVAL -> rival += e.valor
+                    EventoTipo.RIVAL_PUNTO_2 -> rival += 2
+                    EventoTipo.RIVAL_PUNTO_3 -> rival += 3
+                    EventoTipo.RIVAL_LIBRE_ANOTADO -> rival += 1
                 }
             }
             ParcialCuarto(cuarto, propio, rival)
@@ -483,6 +529,8 @@ class PartidoEnVivoViewModel(
             when (e.tipoEvento) {
                 EventoTipo.PUNTO_2 -> { t2++; t2a++ }
                 EventoTipo.PUNTO_3 -> { t3++; t3a++ }
+                EventoTipo.TIRO_DOS_FALLADO -> t2++
+                EventoTipo.TIRO_TRES_FALLADO -> t3++
                 EventoTipo.LIBRE_ANOTADO -> { tl++; tla++ }
                 EventoTipo.LIBRE_FALLADO -> tl++
                 EventoTipo.FALTA_PERSONAL, EventoTipo.FALTA_PERSONAL_TIRO,
@@ -501,7 +549,12 @@ class PartidoEnVivoViewModel(
                     2 -> { t2++; t2a++ }
                     3 -> { t3++; t3a++ }
                 }
+                e.tipoEvento == EventoTipo.RIVAL_PUNTO_2 -> { t2++; t2a++ }
+                e.tipoEvento == EventoTipo.RIVAL_PUNTO_3 -> { t3++; t3a++ }
+                e.tipoEvento == EventoTipo.RIVAL_LIBRE_ANOTADO -> { tl++; tla++ }
+                e.tipoEvento == EventoTipo.RIVAL_LIBRE_FALLADO -> tl++
                 e.tipoEvento == EventoTipo.RIVAL_FALTA_PERSONAL ||
+                e.tipoEvento == EventoTipo.RIVAL_FALTA_PERSONAL_TIRO ||
                 e.tipoEvento == EventoTipo.RIVAL_FALTA_TECNICA ||
                 e.tipoEvento == EventoTipo.RIVAL_FALTA_ANTIDEPORTIVA -> faltas++
             }
@@ -577,6 +630,8 @@ class PartidoEnVivoViewModel(
                     "${prefix}Rival añadida: ${e.texto.split("|").firstOrNull() ?: ""}", isRival = true)
                 EventoTipo.RIVAL_FALTA_PERSONAL -> TimelineItem(e.timestamp, e.cuarto, e.tipoEvento,
                     "${prefix}${rivalNombre(-e.idJugadora)} — falta personal", isRival = true, isFault = true)
+                EventoTipo.RIVAL_FALTA_PERSONAL_TIRO -> TimelineItem(e.timestamp, e.cuarto, e.tipoEvento,
+                    "${prefix}${rivalNombre(-e.idJugadora)} — falta en tiro → libres", isRival = true, isFault = true)
                 EventoTipo.RIVAL_FALTA_TECNICA -> TimelineItem(e.timestamp, e.cuarto, e.tipoEvento,
                     "${prefix}${rivalNombre(-e.idJugadora)} — falta técnica", isRival = true, isFault = true)
                 EventoTipo.RIVAL_FALTA_ANTIDEPORTIVA -> TimelineItem(e.timestamp, e.cuarto, e.tipoEvento,
@@ -593,6 +648,14 @@ class PartidoEnVivoViewModel(
                     "${prefix}${rivalNombre(-e.idJugadora)} — pérdida", isRival = true)
                 EventoTipo.RIVAL_TAPON -> TimelineItem(e.timestamp, e.cuarto, e.tipoEvento,
                     "${prefix}${rivalNombre(-e.idJugadora)} — tapón", isRival = true)
+                EventoTipo.RIVAL_LIBRE_ANOTADO -> TimelineItem(e.timestamp, e.cuarto, e.tipoEvento,
+                    "${prefix}${rivalNombre(-e.idJugadora)} anota tiro libre", isRival = true, isScore = true)
+                EventoTipo.RIVAL_LIBRE_FALLADO -> TimelineItem(e.timestamp, e.cuarto, e.tipoEvento,
+                    "${prefix}${rivalNombre(-e.idJugadora)} falla tiro libre", isRival = true)
+                EventoTipo.RIVAL_SUSTITUCION_ENTRA -> TimelineItem(e.timestamp, e.cuarto, e.tipoEvento,
+                    "${prefix}${rivalNombre(e.valor)} ↑ rival entra al campo", isRival = true)
+                EventoTipo.RIVAL_SUSTITUCION_SALE -> TimelineItem(e.timestamp, e.cuarto, e.tipoEvento,
+                    "${prefix}${rivalNombre(e.valor)} ↓ rival sale al banquillo", isRival = true)
                 EventoTipo.TIMEOUT_PROPIO -> TimelineItem(e.timestamp, e.cuarto, e.tipoEvento,
                     "${prefix}TIMEOUT — Nuestro equipo")
                 EventoTipo.TIMEOUT_RIVAL -> TimelineItem(e.timestamp, e.cuarto, e.tipoEvento,
@@ -611,6 +674,7 @@ class PartidoEnVivoViewModel(
                 EventoTipo.FALTA_PERSONAL, EventoTipo.FALTA_PERSONAL_TIRO,
                 EventoTipo.FALTA_TECNICA, EventoTipo.FALTA_ANTIDEPORTIVA -> propias++
                 EventoTipo.RIVAL_FALTA_PERSONAL,
+                EventoTipo.RIVAL_FALTA_PERSONAL_TIRO,
                 EventoTipo.RIVAL_FALTA_TECNICA,
                 EventoTipo.RIVAL_FALTA_ANTIDEPORTIVA -> rivales++
             }
@@ -702,9 +766,15 @@ class PartidoEnVivoViewModel(
             )
             return
         }
-        // Intercept: missed shots also open location picker
+        // Intercept: missed shots — save to DB for stats, then open location picker
         if (tipoEvento == EventoTipo.TIRO_DOS_FALLADO || tipoEvento == EventoTipo.TIRO_TRES_FALLADO) {
             val puntos = if (tipoEvento == EventoTipo.TIRO_TRES_FALLADO) 3 else 2
+            viewModelScope.launch {
+                repository.registrarEvento(EventoPartidoEntity(
+                    idPartido = partidoId, idJugadora = idJugadora,
+                    tipoEvento = tipoEvento, cuarto = _state.value.cuartoActual
+                ))
+            }
             _state.value = _state.value.copy(
                 showAcciones = false, jugadoraSeleccionada = null,
                 shotLocationConfig = ShotLocationConfig(idTirador = idJugadora, puntos = puntos, hecha = false)
@@ -818,6 +888,107 @@ class PartidoEnVivoViewModel(
         _state.value = _state.value.copy(rivalSeleccionado = null, showRivalAcciones = false)
     }
 
+    fun abrirEditarRival(rival: RivalPlayerState) {
+        _state.value = _state.value.copy(
+            rivalSeleccionado = null, showRivalAcciones = false,
+            showEditRival = true, editingRival = rival
+        )
+    }
+
+    fun cerrarEditarRival() {
+        _state.value = _state.value.copy(showEditRival = false, editingRival = null)
+    }
+
+    fun editarRival(rivalId: Int, nombre: String, numero: String) {
+        if (nombre.isBlank()) return
+        viewModelScope.launch {
+            repository.registrarEvento(EventoPartidoEntity(
+                idPartido = partidoId,
+                idJugadora = -rivalId,
+                tipoEvento = EventoTipo.RIVAL_JUGADORA_ALTA,
+                cuarto = _state.value.cuartoActual,
+                valor = rivalId,
+                texto = "${nombre.trim()}|${numero.trim()}"
+            ))
+        }
+        _state.value = _state.value.copy(showEditRival = false, editingRival = null)
+    }
+
+    fun abrirSustitucionRivalDesdeCancha(rivalId: Int) {
+        _state.value = _state.value.copy(
+            showRivalSustitucion = true, rivalSustSaleId = rivalId, rivalSustEntraId = null,
+            rivalSeleccionado = null, showRivalAcciones = false
+        )
+    }
+
+    fun abrirSustitucionRivalDesdeBanquillo(rivalId: Int) {
+        _state.value = _state.value.copy(
+            showRivalSustitucion = true, rivalSustEntraId = rivalId, rivalSustSaleId = null,
+            rivalSeleccionado = null, showRivalAcciones = false
+        )
+    }
+
+    fun confirmarSustitucionRival(otroId: Int) {
+        val s = _state.value
+        val realSaleId = s.rivalSustSaleId ?: otroId
+        val realEntraId = s.rivalSustEntraId ?: otroId
+        val cuarto = s.cuartoActual
+        viewModelScope.launch {
+            repository.registrarEvento(EventoPartidoEntity(
+                idPartido = partidoId, idJugadora = -realSaleId,
+                tipoEvento = EventoTipo.RIVAL_SUSTITUCION_SALE, cuarto = cuarto, valor = realSaleId
+            ))
+            repository.registrarEvento(EventoPartidoEntity(
+                idPartido = partidoId, idJugadora = -realEntraId,
+                tipoEvento = EventoTipo.RIVAL_SUSTITUCION_ENTRA, cuarto = cuarto, valor = realEntraId
+            ))
+        }
+        cerrarSustitucionRival()
+    }
+
+    fun cerrarSustitucionRival() {
+        _state.value = _state.value.copy(showRivalSustitucion = false, rivalSustSaleId = null, rivalSustEntraId = null)
+    }
+
+    fun registrarTecnicaBanquillo(esPropio: Boolean) {
+        // Open shooter picker first so the FT is attributed to a specific player
+        _state.value = _state.value.copy(
+            tecnicaBanqPickerShow = true,
+            tecnicaBanqEsPropio = esPropio
+        )
+    }
+
+    fun confirmarTecnicaBanqShooter(shooterId: Int) {
+        val s = _state.value
+        val esPropio = s.tecnicaBanqEsPropio
+        val cuarto = s.cuartoActual
+        viewModelScope.launch {
+            if (esPropio) {
+                repository.registrarEvento(EventoPartidoEntity(
+                    idPartido = partidoId, idJugadora = -1,
+                    tipoEvento = EventoTipo.FALTA_TECNICA, cuarto = cuarto, texto = "BANQUILLO"
+                ))
+            } else {
+                repository.registrarEvento(EventoPartidoEntity(
+                    idPartido = partidoId, idJugadora = 0,
+                    tipoEvento = EventoTipo.RIVAL_FALTA_TECNICA, cuarto = cuarto, texto = "BANQUILLO"
+                ))
+            }
+        }
+        _state.value = _state.value.copy(
+            tecnicaBanqPickerShow = false,
+            tirosLibresPendientes = TirosLibresPendientes(
+                idTirador = shooterId,
+                totalTiros = 1,
+                isRivalFT = esPropio  // our bench → rival shoots; rival bench → we shoot
+            )
+        )
+    }
+
+    fun cerrarTecnicaBanqPicker() {
+        _state.value = _state.value.copy(tecnicaBanqPickerShow = false)
+    }
+
     fun registrarEventoRival(tipo: String, rivalId: Int) {
         // Intercept: turnover — don't save yet, open type picker
         if (tipo == EventoTipo.RIVAL_PERDIDA) {
@@ -882,15 +1053,20 @@ class PartidoEnVivoViewModel(
 
     fun iniciarFaltaTiro(idFoulante: Int) {
         val s = _state.value
+        // Our player fouls → rival shoots → pre-select first rival on court
+        val defaultRivalShooter = s.rivalEnCancha.firstOrNull() ?: 0
         _state.value = s.copy(
-            faltaTiroConfig = FaltaTiroConfigState(idFoulante = idFoulante),
+            faltaTiroConfig = FaltaTiroConfigState(idFoulante = idFoulante, idShooter = defaultRivalShooter),
             showAcciones = false, jugadoraSeleccionada = null
         )
     }
 
     fun iniciarFaltaTiroRival(rivalId: Int) {
-        _state.value = _state.value.copy(
-            faltaTiroConfig = FaltaTiroConfigState(idFoulante = rivalId, isRivalFoulant = true),
+        val s = _state.value
+        // Rival fouls → our player shoots → pre-select first own player on court
+        val defaultOwnShooter = s.enCancha.firstOrNull() ?: 0
+        _state.value = s.copy(
+            faltaTiroConfig = FaltaTiroConfigState(idFoulante = rivalId, isRivalFoulant = true, idShooter = defaultOwnShooter),
             showRivalAcciones = false, rivalSeleccionado = null
         )
     }
@@ -902,6 +1078,7 @@ class PartidoEnVivoViewModel(
 
     fun updateFaltaTiroCanasta(v: Boolean) { _state.update { it.copy(faltaTiroConfig = it.faltaTiroConfig?.copy(canastaPuntua = v)) } }
     fun updateFaltaTiroEsTres(v: Boolean) { _state.update { it.copy(faltaTiroConfig = it.faltaTiroConfig?.copy(esTresEnTiro = v)) } }
+    fun updateFaltaTiroShooter(id: Int) { _state.update { it.copy(faltaTiroConfig = it.faltaTiroConfig?.copy(idShooter = id)) } }
 
     fun confirmarFaltaTiro() {
         val config = _state.value.faltaTiroConfig ?: return
@@ -910,24 +1087,30 @@ class PartidoEnVivoViewModel(
                              else EventoTipo.FALTA_PERSONAL_TIRO
             repository.registrarEvento(
                 EventoPartidoEntity(
-                    idPartido = partidoId, idJugadora = config.idFoulante,
+                    idPartido = partidoId,
+                    idJugadora = if (config.isRivalFoulant) -config.idFoulante else config.idFoulante,
                     tipoEvento = eventoType, cuarto = _state.value.cuartoActual
                 )
             )
             if (config.canastaPuntua) {
                 val pts = if (config.esTresEnTiro) 3 else 2
-                // Register the basket that went in (our score if rival fouled, rival score if we fouled)
-                val scoreEvent = if (config.isRivalFoulant)
-                    if (config.esTresEnTiro) EventoTipo.PUNTO_3 else EventoTipo.PUNTO_2
-                else
-                    EventoTipo.PUNTO_RIVAL
-                repository.registrarEvento(
-                    EventoPartidoEntity(
-                        idPartido = partidoId, idJugadora = -1,
-                        tipoEvento = scoreEvent,
-                        cuarto = _state.value.cuartoActual, valor = pts
-                    )
-                )
+                if (config.isRivalFoulant) {
+                    // Rival fouled our player — register our basket
+                    val tipo = if (config.esTresEnTiro) EventoTipo.PUNTO_3 else EventoTipo.PUNTO_2
+                    repository.registrarEvento(EventoPartidoEntity(
+                        idPartido = partidoId,
+                        idJugadora = if (config.idShooter > 0) config.idShooter else -1,
+                        tipoEvento = tipo, cuarto = _state.value.cuartoActual
+                    ))
+                } else {
+                    // Our player fouled rival — register rival basket
+                    val tipo = if (config.esTresEnTiro) EventoTipo.RIVAL_PUNTO_3 else EventoTipo.RIVAL_PUNTO_2
+                    repository.registrarEvento(EventoPartidoEntity(
+                        idPartido = partidoId,
+                        idJugadora = if (config.idShooter > 0) -config.idShooter else -1,
+                        tipoEvento = tipo, cuarto = _state.value.cuartoActual, valor = pts
+                    ))
+                }
             }
         }
         val numTL = when {
@@ -935,12 +1118,12 @@ class PartidoEnVivoViewModel(
             config.esTresEnTiro -> 3
             else -> config.numTiros
         }
-        // If rival fouled our shooter → our team shoots (isRivalFT = false)
-        // If our player fouled rival shooter → rival shoots (isRivalFT = true)
         _state.value = _state.value.copy(
             faltaTiroConfig = null,
             tirosLibresPendientes = TirosLibresPendientes(
-                idTirador = 0, totalTiros = numTL, isRivalFT = !config.isRivalFoulant
+                idTirador = config.idShooter,
+                totalTiros = numTL,
+                isRivalFT = !config.isRivalFoulant
             )
         )
     }
@@ -1148,14 +1331,20 @@ class PartidoEnVivoViewModel(
         val pending = _state.value.tirosLibresPendientes ?: return
         viewModelScope.launch {
             if (pending.isRivalFT) {
-                // Rival shoots: only register score event if anotado
-                if (anotado) {
-                    repository.registrarEvento(
-                        EventoPartidoEntity(
-                            idPartido = partidoId, tipoEvento = EventoTipo.PUNTO_RIVAL,
-                            cuarto = _state.value.cuartoActual, valor = 1
-                        )
-                    )
+                if (pending.idTirador > 0) {
+                    // Specific rival player shoots — attribute to their stats
+                    repository.registrarEvento(EventoPartidoEntity(
+                        idPartido = partidoId,
+                        idJugadora = -pending.idTirador,
+                        tipoEvento = if (anotado) EventoTipo.RIVAL_LIBRE_ANOTADO else EventoTipo.RIVAL_LIBRE_FALLADO,
+                        cuarto = _state.value.cuartoActual
+                    ))
+                } else if (anotado) {
+                    // Generic rival FT (bench technical, no specific player)
+                    repository.registrarEvento(EventoPartidoEntity(
+                        idPartido = partidoId, tipoEvento = EventoTipo.PUNTO_RIVAL,
+                        cuarto = _state.value.cuartoActual, valor = 1
+                    ))
                 }
             } else {
                 repository.registrarEvento(

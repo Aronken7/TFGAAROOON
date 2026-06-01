@@ -91,105 +91,111 @@ fun EstadisticasAvanzadasScreen(navController: NavController, entrenadorId: Int)
 
             // ── Team metrics ──────────────────────────────────────────────────
             item(span = { GridItemSpan(maxLineSpan) }) {
-                Spacer(Modifier.height(16.dp))
-                Text(
-                    "MÉTRICAS DE EQUIPO",
-                    color = TextTertiary,
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    letterSpacing = 1.sp,
-                    modifier = Modifier.padding(horizontal = 16.dp)
-                )
-                Spacer(Modifier.height(8.dp))
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    TeamMetricCard(
-                        titulo = "ORTG",
-                        valor = "%.1f".format(state.teamOrtg),
-                        color = NeonGreen,
-                        subtitulo = "pts/partido",
-                        modifier = Modifier.weight(1f)
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Spacer(Modifier.height(16.dp))
+                    Text(
+                        "MÉTRICAS DE EQUIPO",
+                        color = TextTertiary,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        letterSpacing = 1.sp,
+                        modifier = Modifier.padding(horizontal = 16.dp)
                     )
-                    TeamMetricCard(
-                        titulo = "DRTG",
-                        valor = "%.1f".format(state.teamDrtg),
-                        color = RedError,
-                        subtitulo = "pts/partido",
-                        modifier = Modifier.weight(1f)
-                    )
-                    TeamMetricCard(
-                        titulo = "NET RTG",
-                        valor = "%+.1f".format(netRtg),
-                        color = if (netRtg >= 0) NeonGreen else RedError,
-                        subtitulo = "diferencial",
-                        modifier = Modifier.weight(1f)
-                    )
-                    TeamMetricCard(
-                        titulo = "RITMO",
-                        valor = "%.0f".format(state.teamPace),
-                        color = TealAccent,
-                        subtitulo = "pts/pos.",
-                        modifier = Modifier.weight(1f)
-                    )
+                    Spacer(Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        TeamMetricCard(
+                            titulo = "ORTG",
+                            valor = "%.1f".format(state.teamOrtg),
+                            color = NeonGreen,
+                            subtitulo = "pts/partido",
+                            modifier = Modifier.weight(1f)
+                        )
+                        TeamMetricCard(
+                            titulo = "DRTG",
+                            valor = "%.1f".format(state.teamDrtg),
+                            color = RedError,
+                            subtitulo = "pts/partido",
+                            modifier = Modifier.weight(1f)
+                        )
+                        TeamMetricCard(
+                            titulo = "NET RTG",
+                            valor = "%+.1f".format(netRtg),
+                            color = if (netRtg >= 0) NeonGreen else RedError,
+                            subtitulo = "diferencial",
+                            modifier = Modifier.weight(1f)
+                        )
+                        TeamMetricCard(
+                            titulo = "RITMO",
+                            valor = "%.0f".format(state.teamPace),
+                            color = TealAccent,
+                            subtitulo = "pts/pos.",
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
                 }
             }
 
             // ── Sort chips ────────────────────────────────────────────────────
             item(span = { GridItemSpan(maxLineSpan) }) {
-                Spacer(Modifier.height(16.dp))
-                Text(
-                    "ORDENAR POR",
-                    color = TextTertiary,
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    letterSpacing = 1.sp,
-                    modifier = Modifier.padding(horizontal = 16.dp)
-                )
-                Spacer(Modifier.height(8.dp))
-                LazyRow(
-                    contentPadding = PaddingValues(horizontal = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    items(listOf("PTS", "REB", "AST", "TS%", "eFG%", "AST/TO")) { campo ->
-                        SortChip(
-                            label = campo,
-                            selected = state.sortBy == campo,
-                            onClick = { viewModel.setSortBy(campo) }
-                        )
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Spacer(Modifier.height(16.dp))
+                    Text(
+                        "ORDENAR POR",
+                        color = TextTertiary,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        letterSpacing = 1.sp,
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    LazyRow(
+                        contentPadding = PaddingValues(horizontal = 16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(listOf("PTS", "REB", "AST", "TS%", "eFG%", "AST/TO")) { campo ->
+                            SortChip(
+                                label = campo,
+                                selected = state.sortBy == campo,
+                                onClick = { viewModel.setSortBy(campo) }
+                            )
+                        }
                     }
                 }
             }
 
             // ── Column header ─────────────────────────────────────────────────
             item(span = { GridItemSpan(maxLineSpan) }) {
-                Spacer(Modifier.height(12.dp))
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 4.dp),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        "JUGADORA",
-                        color = TextTertiary,
-                        fontSize = 9.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        modifier = Modifier.weight(2f)
-                    )
-                    listOf("PTS", "REB", "AST", "MIN", "TS%", "AST/TO").forEach { h ->
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Spacer(Modifier.height(12.dp))
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 4.dp),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         Text(
-                            h,
+                            "JUGADORA",
                             color = TextTertiary,
                             fontSize = 9.sp,
                             fontWeight = FontWeight.ExtraBold,
-                            modifier = Modifier.weight(1f),
-                            textAlign = TextAlign.Center
+                            modifier = Modifier.weight(2f)
                         )
+                        listOf("PTS", "REB", "AST", "MIN", "TS%", "AST/TO").forEach { h ->
+                            Text(
+                                h,
+                                color = TextTertiary,
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                modifier = Modifier.weight(1f),
+                                textAlign = TextAlign.Center
+                            )
+                        }
                     }
                 }
             }
